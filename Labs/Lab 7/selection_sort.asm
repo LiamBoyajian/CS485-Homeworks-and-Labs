@@ -45,42 +45,44 @@ loop_sort_outer:
 	addi $t1, $t1, 1
 	
 	sub $t3, $t0, $t1 # Inner max
-	move $t4, $zero   # Inner counter
 	move $t5, $t2     # Inner pointer
-	move $t6, $t5     # Smallest address
+	move $t6, $t2     # Smallest address
 	lw $t7, 0($t6)	 # Smallest value
 	
-	loop_sort_inner:
-		beq $t3, $t4, loop_sort_inner_finished
-		addi $t4, $t4, 1
-		
+
+	sll $t3, $t3, 2
+	add $t3, $t3, $t5
+
+	beq $t3, $t5, loop_sort_inner_finished #end loop when pointers match as final value
+	loop_sort_inner: #checkpoint
+	
 		lw $t8, 0($t5)
-		bgt $t8, $t7, loop_sort_inner_not_greater
-		j loop_sort_inner_greater
-		loop_sort_inner_not_greater:
-			addi $t5, $t5, 4
-			j loop_sort_inner
+		blt $t8, $t7, loop_sort_inner_greater		
+		
+		addi $t5, $t5, 4
+		bne $t3, $t5, loop_sort_inner
+		j loop_sort_inner_finished
+			
 		loop_sort_inner_greater:
 			move $t6, $t5
 			move $t7, $t8
 			addi $t5, $t5, 4
-			j loop_sort_inner
-	
-		j loop_sort_inner
-	
+			bne $t3, $t5, loop_sort_inner
+			j loop_sort_inner_finished
+		
 	loop_sort_inner_finished:
 		lw $t9, 0($t2)
 		sw $t7, 0($t2)
 		sw $t9, 0($t6)
 		addi $t2, $t2, 4
-		j loop_sort_outer
+		j loop_sort_outer# forced i think
 	
 loop_sort_outer_finished:
 	lw $t0, len_array
 	move $t1, $zero
 	la $t2, array
 	
-loop_print:
+loop_print: #Will make minimal changes to the speed <=44n ish
 	beq $t0, $t1, loop_print_finished
 	
 	li $v0, 1
@@ -104,17 +106,19 @@ loop_print:
 	div $t4, $t3
 	mfhi $t5
 	beq $t5, $zero, is_even
-	j is_odd
-is_even:
-	li $v0, 4
-	la $a0, even
-	syscall
-	j print_continue
+
 is_odd:
 	li $v0, 4
 	la $a0, odd
 	syscall
 	j print_continue
+
+is_even:
+	li $v0, 4
+	la $a0, even
+	syscall
+	j print_continue
+
 	
 print_continue:	
 	
